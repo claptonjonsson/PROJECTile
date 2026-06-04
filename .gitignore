@@ -1,0 +1,43 @@
+# Build outputs
+bin/
+obj/
+artifacts/
+
+# User-specific files
+*.user
+*.userosscache
+*.suo
+*.userprefs
+
+# Rider / ReSharper
+.idea/
+.idea/**
+*.idea/
+*.sln.iml
+_ReSharper.*/
+
+# Visual Studio / VS Code
+.vscode/
+.vs/
+
+# Logs and runtime
+*.log
+*.tlog
+*.pidb
+*.pid
+
+# OS / temp files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+*.swp
+*~
+
+# Native AOT / packaging artifacts
+*.nupkg
+*.snupkg
+*.bak
+.nuget/
+project.bin
+project.assets.json

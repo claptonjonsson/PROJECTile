@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/sandbox/">
+    <Project Path="sandbox/PROJECTile.Sandbox/PROJECTile.Sandbox.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/PROJECTile.Core/PROJECTile.Core.csproj" />
+    <Project Path="src/PROJECTile.Terminal/PROJECTile.Terminal.csproj" />
+  </Folder>
+</Solution>
