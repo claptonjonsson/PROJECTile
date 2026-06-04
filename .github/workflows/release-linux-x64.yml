@@ -18,15 +18,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check if this is a merge commit
+        id: merge_check
+        run: |
+          parent_count=$(git rev-list --parents -n 1 "$GITHUB_SHA" | awk '{print NF - 1}')
+          if [ "$parent_count" -gt 1 ]; then
+            echo "is_merge=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_merge=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping: push was not a merge commit to main."
+          fi
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
+        if: steps.merge_check.outputs.is_merge == 'true'
         with:
           dotnet-version: 10.0.x
 
       - name: Restore
+        if: steps.merge_check.outputs.is_merge == 'true'
         run: dotnet restore src/PROJECTile.Terminal/PROJECTile.Terminal.csproj
 
       - name: Publish single-file AOT binary
+        if: steps.merge_check.outputs.is_merge == 'true'
         run: |
           dotnet publish src/PROJECTile.Terminal/PROJECTile.Terminal.csproj \
             -c Release \
@@ -36,6 +50,7 @@ jobs:
             -p:PublishAot=true
 
       - name: Prepare artifact
+        if: steps.merge_check.outputs.is_merge == 'true'
         run: |
           mkdir -p out
           published_binary="src/PROJECTile.Terminal/bin/Release/net10.0/linux-x64/publish/PROJECTile.Terminal"
@@ -51,12 +66,14 @@ jobs:
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
+        if: steps.merge_check.outputs.is_merge == 'true'
         with:
           name: projectile-linux-x64
           path: out/PROJECTile-linux-x64.tar.gz
           if-no-files-found: error
 
       - name: Update nightly release
+        if: steps.merge_check.outputs.is_merge == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
