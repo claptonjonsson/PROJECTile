@@ -72,30 +72,30 @@ jobs:
           path: out/PROJECTile-linux-x64.tar.gz
           if-no-files-found: error
 
-      - name: Update nightly release
+      - name: Update dev release
         if: steps.merge_check.outputs.is_merge == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          nightly_tag="nightly"
-          release_name="PROJECTile nightly"
+          dev_tag="dev"
+          release_name="PROJECTile dev"
 
-          if gh release view "$nightly_tag" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
-            gh release edit "$nightly_tag" \
+          if gh release view "$dev_tag" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release edit "$dev_tag" \
               --repo "${GITHUB_REPOSITORY}" \
               --target "${{ github.sha }}" \
               --prerelease \
               --title "$release_name"
           else
-            gh release create "$nightly_tag" \
+            gh release create "$dev_tag" \
               --repo "${GITHUB_REPOSITORY}" \
               --target "${{ github.sha }}" \
               --prerelease \
               --title "$release_name" \
-              --notes "Automated nightly build from main branch."
+              --notes "Automated dev build from main branch."
           fi
 
-          gh release upload "$nightly_tag" out/PROJECTile-linux-x64.tar.gz \
+          gh release upload "$dev_tag" out/PROJECTile-linux-x64.tar.gz \
             --repo "${GITHUB_REPOSITORY}" \
             --clobber
