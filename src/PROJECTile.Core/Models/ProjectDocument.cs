@@ -7,4 +7,5 @@ public sealed class ProjectDocument
     public List<ProjectResource> Resources { get; set; } = [];
     public List<ResourceLink> ResourceLinks { get; set; } = [];
     public List<CodeTodoNote> CodeTodoNotes { get; set; } = [];
+    public CodeTodoScanOptions? CodeTodoScan { get; set; } = new();
 }

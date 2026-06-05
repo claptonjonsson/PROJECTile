@@ -15,8 +15,8 @@ public sealed class TaskService
     {
         ProjectTask task = new()
         {
-            Id = NewId(),
-            Title = CleanRequired(title, "Task title"),
+            Id = ServiceHelpers.NewId(),
+            Title = ServiceHelpers.CleanRequired(title, "Task title"),
             Body = body.Trim(),
             Status = status
         };
@@ -28,7 +28,7 @@ public sealed class TaskService
     public void Update(string id, string title, string body)
     {
         ProjectTask task = FindRequired(id);
-        task.Title = CleanRequired(title, "Task title");
+        task.Title = ServiceHelpers.CleanRequired(title, "Task title");
         task.Body = body.Trim();
     }
 
@@ -62,19 +62,6 @@ public sealed class TaskService
 
     private ProjectTask FindRequired(string id)
     {
-        return Find(id) ?? throw new InvalidOperationException($"Task '{id}' was not found.");
-    }
-
-    private static string CleanRequired(string value, string name)
-    {
-        string trimmed = value.Trim();
-        return trimmed.Length == 0
-            ? throw new ArgumentException($"{name} is required.", nameof(value))
-            : trimmed;
-    }
-
-    private static string NewId()
-    {
-        return Guid.NewGuid().ToString("N");
+        return ServiceHelpers.FindRequired(Find(id), "Task", id);
     }
 }

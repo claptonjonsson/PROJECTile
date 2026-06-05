@@ -4,9 +4,11 @@ namespace PROJECTile.Core.Services;
 
 public sealed class CodeTodoScanner
 {
-    private static readonly string TodoMarker = "/" + "/TODO";
+    private static readonly string DefaultTodoMarker = "/" + "/TODO";
 
-    private static readonly string[] IgnoredDirectories =
+    private static readonly string[] DefaultMarkers = [DefaultTodoMarker];
+
+    private static readonly string[] DefaultIgnoredDirectories =
     [
         ".git",
         "bin",
@@ -18,20 +20,28 @@ public sealed class CodeTodoScanner
     ];
 
     private readonly string _workspaceRoot;
+    private readonly CodeTodoScanOptions _scanOptions;
 
-    public CodeTodoScanner(string workspaceRoot)
+    public CodeTodoScanner(string workspaceRoot, CodeTodoScanOptions? scanOptions = null)
     {
         _workspaceRoot = Path.GetFullPath(workspaceRoot);
+        _scanOptions = scanOptions ?? new CodeTodoScanOptions();
     }
 
     public IReadOnlyList<CodeTodoItem> Scan(ProjectDocument document)
     {
+        return Scan(document, document.CodeTodoScan);
+    }
+
+    public IReadOnlyList<CodeTodoItem> Scan(ProjectDocument document, CodeTodoScanOptions? scanOptions)
+    {
         List<CodeTodoItem> items = [];
         Dictionary<string, int> occurrences = new(StringComparer.Ordinal);
+        CodeTodoScanOptions effectiveScanOptions = CreateEffectiveScanOptions(_scanOptions, scanOptions);
 
-        foreach (string filePath in EnumerateFiles(_workspaceRoot))
+        foreach (string filePath in EnumerateFiles(_workspaceRoot, effectiveScanOptions.IgnoredDirectories))
         {
-            ScanFile(filePath, document, occurrences, items);
+            ScanFile(filePath, document, effectiveScanOptions.Markers, occurrences, items);
         }
 
         return items
@@ -65,6 +75,7 @@ public sealed class CodeTodoScanner
     private void ScanFile(
         string filePath,
         ProjectDocument document,
+        IReadOnlyList<string> markers,
         Dictionary<string, int> occurrences,
         List<CodeTodoItem> items)
     {
@@ -75,31 +86,30 @@ public sealed class CodeTodoScanner
         foreach (string line in File.ReadLines(filePath))
         {
             lineNumber++;
-            int markerIndex = line.IndexOf(TodoMarker, StringComparison.Ordinal);
-            if (markerIndex < 0)
+            foreach ((int MarkerIndex, string Marker) markerMatch in FindMarkerMatches(line, markers))
             {
-                continue;
+                int todoTextStart = markerMatch.MarkerIndex + markerMatch.Marker.Length;
+                string normalizedText = NormalizeTodoText(line[todoTextStart..]);
+                string occurrenceKey = $"{relativePath}\n{normalizedText}";
+                occurrences.TryGetValue(occurrenceKey, out int occurrenceIndex);
+                occurrences[occurrenceKey] = occurrenceIndex + 1;
+
+                string noteBody = FindNoteBody(document, relativePath, normalizedText, occurrenceIndex);
+                items.Add(new CodeTodoItem
+                {
+                    FilePath = relativePath,
+                    LineNumber = lineNumber,
+                    NormalizedText = normalizedText,
+                    OccurrenceIndex = occurrenceIndex,
+                    NoteBody = noteBody
+                });
             }
-
-            string normalizedText = NormalizeTodoText(line[(markerIndex + TodoMarker.Length)..]);
-            string occurrenceKey = $"{relativePath}\n{normalizedText}";
-            occurrences.TryGetValue(occurrenceKey, out int occurrenceIndex);
-            occurrences[occurrenceKey] = occurrenceIndex + 1;
-
-            string noteBody = FindNoteBody(document, relativePath, normalizedText, occurrenceIndex);
-            items.Add(new CodeTodoItem
-            {
-                FilePath = relativePath,
-                LineNumber = lineNumber,
-                NormalizedText = normalizedText,
-                OccurrenceIndex = occurrenceIndex,
-                NoteBody = noteBody
-            });
         }
     }
 
-    private static IEnumerable<string> EnumerateFiles(string root)
+    private static IEnumerable<string> EnumerateFiles(string root, IReadOnlyList<string> ignoredDirectories)
     {
+        HashSet<string> ignoredDirectoryNames = ignoredDirectories.ToHashSet(StringComparer.OrdinalIgnoreCase);
         Stack<string> pending = new();
         pending.Push(root);
 
@@ -110,7 +120,7 @@ public sealed class CodeTodoScanner
             foreach (string childDirectory in Directory.EnumerateDirectories(directory))
             {
                 string name = Path.GetFileName(childDirectory);
-                if (!IgnoredDirectories.Contains(name, StringComparer.OrdinalIgnoreCase))
+                if (!ignoredDirectoryNames.Contains(name))
                 {
                     pending.Push(childDirectory);
                 }
@@ -121,6 +131,51 @@ public sealed class CodeTodoScanner
                 yield return file;
             }
         }
+    }
+
+    private static IEnumerable<(int MarkerIndex, string Marker)> FindMarkerMatches(
+        string line,
+        IReadOnlyList<string> markers)
+    {
+        return markers
+            .Select(marker => (MarkerIndex: line.IndexOf(marker, StringComparison.Ordinal), Marker: marker))
+            .Where(match => match.MarkerIndex >= 0)
+            .OrderBy(match => match.MarkerIndex);
+    }
+
+    private static CodeTodoScanOptions CreateEffectiveScanOptions(params CodeTodoScanOptions?[] scanOptions)
+    {
+        return new CodeTodoScanOptions
+        {
+            Markers = CleanValues(
+                DefaultMarkers,
+                scanOptions.SelectMany(options => options?.Markers ?? []),
+                StringComparer.Ordinal),
+            IgnoredDirectories = CleanValues(
+                DefaultIgnoredDirectories,
+                scanOptions.SelectMany(options => options?.IgnoredDirectories ?? []),
+                StringComparer.OrdinalIgnoreCase)
+        };
+    }
+
+    private static List<string> CleanValues(
+        IEnumerable<string> defaultValues,
+        IEnumerable<string> projectValues,
+        StringComparer comparer)
+    {
+        HashSet<string> seen = new(comparer);
+        List<string> values = [];
+
+        foreach (string value in defaultValues.Concat(projectValues))
+        {
+            string trimmed = value.Trim();
+            if (trimmed.Length > 0 && seen.Add(trimmed))
+            {
+                values.Add(trimmed);
+            }
+        }
+
+        return values;
     }
 
     private static string NormalizeTodoText(string text)

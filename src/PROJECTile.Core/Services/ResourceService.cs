@@ -15,11 +15,10 @@ public sealed class ResourceService
     {
         ProjectResource resource = new()
         {
-            Id = NewId(),
-            Title = CleanRequired(title, "Resource title"),
-            Body = body.Trim()
+            Id = ServiceHelpers.NewId(),
+            Title = ServiceHelpers.CleanRequired(title, "Resource title"),
+            Body = body.Trim(),
         };
-
         _document.Resources.Add(resource);
         return resource;
     }
@@ -27,7 +26,7 @@ public sealed class ResourceService
     public void Update(string id, string title, string body)
     {
         ProjectResource resource = FindRequired(id);
-        resource.Title = CleanRequired(title, "Resource title");
+        resource.Title = ServiceHelpers.CleanRequired(title, "Resource title");
         resource.Body = body.Trim();
     }
 
@@ -54,15 +53,18 @@ public sealed class ResourceService
         AddLink(resourceId, ResourceLinkTargetType.CodeTodo, targetId);
     }
 
-    public IReadOnlyList<ProjectResource> FindResourcesFor(ResourceLinkTargetType targetType, string targetId)
+    public IReadOnlyList<ProjectResource> FindResourcesFor(
+        ResourceLinkTargetType targetType,
+        string targetId
+    )
     {
-        HashSet<string> ids = _document.ResourceLinks
-            .Where(link => link.TargetType == targetType && link.TargetId == targetId)
+        HashSet<string> ids = _document
+            .ResourceLinks.Where(link => link.TargetType == targetType && link.TargetId == targetId)
             .Select(link => link.ResourceId)
             .ToHashSet(StringComparer.Ordinal);
 
-        return _document.Resources
-            .Where(resource => ids.Contains(resource.Id))
+        return _document
+            .Resources.Where(resource => ids.Contains(resource.Id))
             .OrderBy(resource => resource.Title, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
@@ -75,36 +77,26 @@ public sealed class ResourceService
     private void AddLink(string resourceId, ResourceLinkTargetType targetType, string targetId)
     {
         bool exists = _document.ResourceLinks.Any(link =>
-            link.ResourceId == resourceId &&
-            link.TargetType == targetType &&
-            link.TargetId == targetId);
+            link.ResourceId == resourceId
+            && link.TargetType == targetType
+            && link.TargetId == targetId
+        );
 
         if (!exists)
         {
-            _document.ResourceLinks.Add(new ResourceLink
-            {
-                ResourceId = resourceId,
-                TargetType = targetType,
-                TargetId = targetId
-            });
+            _document.ResourceLinks.Add(
+                new ResourceLink
+                {
+                    ResourceId = resourceId,
+                    TargetType = targetType,
+                    TargetId = targetId,
+                }
+            );
         }
     }
 
     private ProjectResource FindRequired(string id)
     {
-        return Find(id) ?? throw new InvalidOperationException($"Resource '{id}' was not found.");
-    }
-
-    private static string CleanRequired(string value, string name)
-    {
-        string trimmed = value.Trim();
-        return trimmed.Length == 0
-            ? throw new ArgumentException($"{name} is required.", nameof(value))
-            : trimmed;
-    }
-
-    private static string NewId()
-    {
-        return Guid.NewGuid().ToString("N");
+        return ServiceHelpers.FindRequired(Find(id), "Resource", id);
     }
 }

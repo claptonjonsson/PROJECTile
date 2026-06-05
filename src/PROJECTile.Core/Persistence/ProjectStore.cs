@@ -43,6 +43,9 @@ public sealed class ProjectStore
         document.Resources ??= [];
         document.ResourceLinks ??= [];
         document.CodeTodoNotes ??= [];
+        document.CodeTodoScan ??= new CodeTodoScanOptions();
+        document.CodeTodoScan.Markers ??= [];
+        document.CodeTodoScan.IgnoredDirectories ??= [];
         return document;
     }
 
