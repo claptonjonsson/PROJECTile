@@ -1,46 +1,58 @@
-name: Release Linux x64
+name: Nightly Release Linux x64
 
 on:
-  push:
-    branches:
-      - main
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
 
 permissions:
   contents: write
-  packages: write
+
+concurrency:
+  group: nightly-release-linux-x64
+  cancel-in-progress: false
 
 jobs:
   publish-linux:
-    name: Build and publish linux-x64
+    name: Build and publish nightly linux-x64
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check if this is a merge commit
-        id: merge_check
+      - name: Check if nightly is unchanged
+        id: nightly_check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          parent_count=$(git rev-list --parents -n 1 "$GITHUB_SHA" | awk '{print NF - 1}')
-          if [ "$parent_count" -gt 1 ]; then
-            echo "is_merge=true" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          nightly_tag="nightly"
+          current_sha="${{ github.sha }}"
+          release_target="$(gh release view "$nightly_tag" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --json targetCommitish \
+            --jq '.targetCommitish' 2>/dev/null || true)"
+
+          if [ "$release_target" = "$current_sha" ]; then
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping: nightly release already targets ${current_sha}."
           else
-            echo "is_merge=false" >> "$GITHUB_OUTPUT"
-            echo "Skipping: push was not a merge commit to main."
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
-        if: steps.merge_check.outputs.is_merge == 'true'
+        if: steps.nightly_check.outputs.should_publish == 'true'
         with:
           dotnet-version: 10.0.x
 
       - name: Restore
-        if: steps.merge_check.outputs.is_merge == 'true'
+        if: steps.nightly_check.outputs.should_publish == 'true'
         run: dotnet restore src/PROJECTile.Terminal/PROJECTile.Terminal.csproj
 
       - name: Publish single-file AOT binary
-        if: steps.merge_check.outputs.is_merge == 'true'
+        if: steps.nightly_check.outputs.should_publish == 'true'
         run: |
           dotnet publish src/PROJECTile.Terminal/PROJECTile.Terminal.csproj \
             -c Release \
@@ -50,7 +62,7 @@ jobs:
             -p:PublishAot=true
 
       - name: Prepare artifact
-        if: steps.merge_check.outputs.is_merge == 'true'
+        if: steps.nightly_check.outputs.should_publish == 'true'
         run: |
           mkdir -p out
           published_binary="src/PROJECTile.Terminal/bin/Release/net10.0/linux-x64/publish/PROJECTile.Terminal"
@@ -66,36 +78,36 @@ jobs:
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
-        if: steps.merge_check.outputs.is_merge == 'true'
+        if: steps.nightly_check.outputs.should_publish == 'true'
         with:
           name: projectile-linux-x64
           path: out/PROJECTile-linux-x64.tar.gz
           if-no-files-found: error
 
-      - name: Update dev release
-        if: steps.merge_check.outputs.is_merge == 'true'
+      - name: Update nightly release
+        if: steps.nightly_check.outputs.should_publish == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          dev_tag="dev"
-          release_name="PROJECTile dev"
+          nightly_tag="nightly"
+          release_name="PROJECTile nightly"
 
-          if gh release view "$dev_tag" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
-            gh release edit "$dev_tag" \
+          if gh release view "$nightly_tag" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release edit "$nightly_tag" \
               --repo "${GITHUB_REPOSITORY}" \
               --target "${{ github.sha }}" \
               --prerelease \
               --title "$release_name"
           else
-            gh release create "$dev_tag" \
+            gh release create "$nightly_tag" \
               --repo "${GITHUB_REPOSITORY}" \
               --target "${{ github.sha }}" \
               --prerelease \
               --title "$release_name" \
-              --notes "Automated dev build from main branch."
+              --notes "Automated nightly build from main branch."
           fi
 
-          gh release upload "$dev_tag" out/PROJECTile-linux-x64.tar.gz \
+          gh release upload "$nightly_tag" out/PROJECTile-linux-x64.tar.gz \
             --repo "${GITHUB_REPOSITORY}" \
             --clobber
