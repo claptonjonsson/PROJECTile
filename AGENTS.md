@@ -1,10 +1,22 @@
 # AGENTS
 
-This repo contains the `PROJECTile` terminal application and shared libraries for a .NET toolchain.
+PROJECTile is a .NET terminal app for managing project tasks, resources, documents, and code TODOs.
 
-Project references:
+## Structure
+
+- `src/PROJECTile.Core`: domain models, persistence, and services.
+- `src/PROJECTile.Terminal`: Spectre.Console terminal UI.
+- `sandbox/PROJECTile.Sandbox`: local playground for manual experiments.
+- `.github/workflows`: CI and release automation.
+- `.skills/coding-guidelines`: repo coding guidelines for reviewable code.
+
+## Agent guidance
+
+- Be terse: read/search only what is needed, summarize noisy output, avoid repeating unchanged context.
+- Be constructively critical: call out risks and weaker alternatives.
+- For code changes, follow `.skills/coding-guidelines/SKILL.md`.
+
+## References
+
 - Spectre.Console: https://spectreconsole.net/
 - Native AOT: https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/
-- .NET Standard Design Guidelines: https://learn.microsoft.com/en-us/dotnet/standard/design-guidelines/
-
-Code should be reviewable from diff alone: prefer specific, readable names over dense blocks and comments.
