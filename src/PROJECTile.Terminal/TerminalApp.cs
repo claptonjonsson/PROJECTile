@@ -1,3 +1,5 @@
+//TODO en till test
+//TODO testar
 using PROJECTile.Core.Models;
 using PROJECTile.Core.Persistence;
 using PROJECTile.Core.Services;
@@ -6,13 +8,14 @@ using Spectre.Console;
 namespace PROJECTile.Terminal;
 
 internal sealed partial class TerminalApp
+//TODO testar
 {
     private static readonly ProjectSection[] Sections =
     [
         ProjectSection.Todo,
         ProjectSection.Doing,
         ProjectSection.Done,
-        ProjectSection.Resources
+        ProjectSection.Resources,
     ];
 
     private readonly ProjectStore _store;
@@ -21,7 +24,7 @@ internal sealed partial class TerminalApp
     private TaskService _tasks;
     private ResourceService _resources;
     private IReadOnlyList<CodeTodoItem> _codeTodos = [];
-    private AppFocus _focus = AppFocus.List;
+    private AppFocus _focus = AppFocus.Nav;
     private ProjectSection _section = ProjectSection.Todo;
     private int _navIndex;
     private int _listIndex;
