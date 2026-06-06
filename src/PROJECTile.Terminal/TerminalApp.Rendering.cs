@@ -10,16 +10,15 @@ internal sealed partial class TerminalApp
     {
         AnsiConsole.Clear();
 
-        Layout layout = new Layout("root")
-            .SplitColumns(
-                new Layout("nav").Size(24),
-                new Layout("main"));
+        Layout layout = new Layout("root").SplitColumns(
+            new Layout("nav").Size(24),
+            new Layout("main")
+        );
 
         layout["nav"].Update(new Panel(BuildNav()).Header("PROJECTile"));
         layout["main"].Update(new Panel(BuildMain()).Header(BuildHeader()));
 
         AnsiConsole.Write(layout);
-        AnsiConsole.MarkupLine("[grey]j/k move  h back  l/enter open/link  a add  e edit  d delete  m move  r refresh  ? help  q quit/back[/]");
     }
 
     private IRenderable BuildNav()
@@ -91,8 +90,15 @@ internal sealed partial class TerminalApp
         else if (entry.CodeTodo is not null)
         {
             grid.AddRow(new Markup($"[bold]{Markup.Escape(entry.CodeTodo.NormalizedText)}[/]"));
-            grid.AddRow(new Markup($"File: [green]{Markup.Escape(entry.CodeTodo.FilePath)}:{entry.CodeTodo.LineNumber}[/]"));
-            AddBody(grid, entry.CodeTodo.NoteBody.Length == 0 ? "No note." : entry.CodeTodo.NoteBody);
+            grid.AddRow(
+                new Markup(
+                    $"File: [green]{Markup.Escape(entry.CodeTodo.FilePath)}:{entry.CodeTodo.LineNumber}[/]"
+                )
+            );
+            AddBody(
+                grid,
+                entry.CodeTodo.NoteBody.Length == 0 ? "No note." : entry.CodeTodo.NoteBody
+            );
             AddLinkedResources(grid, ResourceLinkTargetType.CodeTodo, entry.CodeTodo.TargetId);
         }
 
@@ -125,8 +131,8 @@ internal sealed partial class TerminalApp
 
     private void AddResourceTargets(Grid grid, string resourceId)
     {
-        IReadOnlyList<ResourceLink> links = _document.ResourceLinks
-            .Where(link => link.ResourceId == resourceId)
+        IReadOnlyList<ResourceLink> links = _document
+            .ResourceLinks.Where(link => link.ResourceId == resourceId)
             .ToList();
 
         grid.AddRow(new Markup("[bold]Linked items[/]"));

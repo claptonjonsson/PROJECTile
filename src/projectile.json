@@ -1,9 +1,47 @@
 {
   "schemaVersion": 1,
-  "tasks": [],
-  "resources": [],
-  "resourceLinks": [],
-  "codeTodoNotes": [],
+  "tasks": [
+    {
+      "id": "b74a0a446c2f4b8095422635ecb6a420",
+      "title": "test",
+      "body": "testar",
+      "status": "Doing"
+    },
+    {
+      "id": "ae8bb08bede947fea71df6a112751a85",
+      "title": "funkar",
+      "body": "verkar funka",
+      "status": "Todo"
+    },
+    {
+      "id": "74d679e3959a4fa38262041060c9c064",
+      "title": "code note test",
+      "body": "",
+      "status": "Todo"
+    }
+  ],
+  "resources": [
+    {
+      "id": "0eefdadb397f45c1b5f2a836b9263ab5",
+      "title": "thoughts",
+      "body": "i think we should consider"
+    }
+  ],
+  "resourceLinks": [
+    {
+      "resourceId": "0eefdadb397f45c1b5f2a836b9263ab5",
+      "targetType": "CodeTodo",
+      "targetId": "UFJPSkVDVGlsZS5UZXJtaW5hbC9UZXJtaW5hbEFwcC5jcw.0.ZW4gdGlsbCB0ZXN0"
+    }
+  ],
+  "codeTodoNotes": [
+    {
+      "filePath": "PROJECTile.Terminal/TerminalApp.cs",
+      "normalizedText": "testar",
+      "occurrenceIndex": 0,
+      "body": "kodar en todo"
+    }
+  ],
   "codeTodoScan": {
     "markers": [],
     "ignoredDirectories": []
