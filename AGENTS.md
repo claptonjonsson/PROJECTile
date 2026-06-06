@@ -12,8 +12,6 @@ PROJECTile is a .NET terminal app for managing project tasks, resources, documen
 
 ## Agent guidance
 
-- Be terse: read/search only what is needed, summarize noisy output, avoid repeating unchanged context.
-- Be constructively critical: call out risks and weaker alternatives.
 - For code changes, follow `.skills/coding-guidelines/SKILL.md`.
 
 ## References
